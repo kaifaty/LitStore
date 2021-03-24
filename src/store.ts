@@ -1,15 +1,39 @@
-import { LitElement } from 'lit-element';
+export interface ILitElement {
+    requestUpdate(): Promise<unknown>
+}
 export type TObserver = () => Promise<unknown>
-export type TObserversList = Map<LitElement, Set<string>>;
+export type TObserversList = Map<ILitElement, Set<string>>;
 export interface IStore {
-    addComponent(observer: LitElement, keys: Set<string>): void
-    removeComponent(observer: LitElement): void
+    addComponent(observer: ILitElement, keys: Set<string>): void
+    removeComponent(observer: ILitElement): void
 }
 
 type TData = Record<string, unknown>;
-type Constructor = new (...args: any[]) => {
+export type Constructor = new (...args: any[]) => {
     data: TData
 };
+
+class StateRecorder {
+    _log: Map<IStore, Set<string>>
+    start() {
+        this._log = new Map();
+    }
+    recordRead(stateObj: IStore, key: string) {
+        if (this._log === null) return;
+        const keys = this._log.get(stateObj) || new Set()
+        keys.add(key);
+        this._log.set(stateObj, keys);
+    }
+    finish() {
+        const stateVars = this._log;
+        this._log = null;
+        return stateVars;
+    }
+
+}
+export type TRecorder = Map<IStore, Set<string>>
+export const stateRecorder = new StateRecorder();
+
 export function createStore<T extends Constructor>(base: T){
     return class Store extends base implements IStore{
         _observers: TObserversList = new Map();
@@ -17,10 +41,10 @@ export function createStore<T extends Constructor>(base: T){
             super();
             this._initStateVars();
         }
-        addComponent(component: LitElement, keys: Set<string>) {
+        addComponent(component: ILitElement, keys: Set<string>) {
             this._observers.set(component, keys);
         }
-        removeComponent(component: LitElement) {
+        removeComponent(component: ILitElement) {
             this._observers.delete(component);
         }
         _initStateVars() {        
@@ -72,24 +96,3 @@ export function createStore<T extends Constructor>(base: T){
         }
         }
 }
-
-class StateRecorder {
-    _log: Map<IStore, Set<string>>
-    start() {
-        this._log = new Map();
-    }
-    recordRead(stateObj: IStore, key: string) {
-        if (this._log === null) return;
-        const keys = this._log.get(stateObj) || new Set()
-        keys.add(key);
-        this._log.set(stateObj, keys);
-    }
-    finish() {
-        const stateVars = this._log;
-        this._log = null;
-        return stateVars;
-    }
-
-}
-export type TRecorder = Map<IStore, Set<string>>
-export const stateRecorder = new StateRecorder();

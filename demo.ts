@@ -1,6 +1,5 @@
-import { createStore } from './src/store'
-import { LitStore } from './src/lit-store'
-import { html, customElement } from 'lit-element';
+import { createStore, createLitStore } from './src'
+import { html, customElement, LitElement } from 'lit-element';
 
 class myStore {
     data = {
@@ -19,9 +18,8 @@ const Store = createStore(myStore);
 const store = new Store(); 
 const state = store.data;
 
-
 @customElement("demo-comp")
-class DemoComponent extends LitStore {
+class DemoComponent extends createLitStore(LitElement) {
     render() {
         return html`
             <div>
@@ -37,7 +35,7 @@ class DemoComponent extends LitStore {
     }
 }
 @customElement("user-component")
-class MyComponent extends LitStore {
+class MyComponent extends createLitStore(LitElement)  {
     render() {
         return html`
             <div>
