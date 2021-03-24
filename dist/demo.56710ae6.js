@@ -380,7 +380,8 @@ var createLitStore = function createLitStore(LitElement) {
     }, {
       key: "update",
       value: function update(changedProperties) {
-        _store.stateRecorder.start();
+        _store.stateRecorder.start(); //@ts-ignore
+
 
         _get(_getPrototypeOf(_class.prototype), "update", this).call(this, changedProperties);
 
@@ -4627,7 +4628,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62058" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62814" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

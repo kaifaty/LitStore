@@ -7,6 +7,7 @@ type Constructor<T> = new(...args: any[]) => T;
 interface CustomElement {
     connectedCallback?(): void;
     disconnectedCallback?(): void;
+    requestUpdate(): Promise<unknown>
     readonly isConnected: boolean;
   }
   
@@ -17,8 +18,9 @@ export const createLitStore = <T extends Constructor<CustomElement>>(LitElement:
             super.disconnectedCallback();
             this._clearObservers();
         }
-        public update(changedProperties: PropertyValues): void  {
+        protected  update(changedProperties: PropertyValues): void  {
             stateRecorder.start();
+            //@ts-ignore
             super.update(changedProperties);
             this._initStateObservers();
         }
