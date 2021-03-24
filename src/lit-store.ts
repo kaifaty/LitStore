@@ -13,28 +13,28 @@ interface CustomElement {
   
 export const createLitStore = <T extends Constructor<CustomElement>>(LitElement: T) => {
     return class  extends LitElement {
-        private _usedStores: Set<IStore> = new Set();
+        _usedStores: Set<IStore> = new Set();
         disconnectedCallback(): void {
             super.disconnectedCallback();
             this._clearObservers();
         }
-        protected  update(changedProperties: PropertyValues): void  {
+        update(changedProperties: PropertyValues): void  {
             stateRecorder.start();
             //@ts-ignore
             super.update(changedProperties);
             this._initStateObservers();
         }
-        private _initStateObservers(): void  {
+        _initStateObservers(): void  {
             this._clearObservers();
             if (!this.isConnected) return;
             this._addObservers(stateRecorder.finish());
         }
-        private _addObservers(usedStores: TRecorder): void  {
+        _addObservers(usedStores: TRecorder): void  {
             for (let [store, keys] of usedStores) {
                 store.addComponent(this, keys);
             }
         }
-        private _clearObservers(): void {
+        _clearObservers(): void {
             for(const vals of this._usedStores){
                 vals.removeComponent(this);
             }
