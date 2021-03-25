@@ -1,6 +1,5 @@
-import { createStore, createLitStore } from './src'
+import { createStore, observeLitElement } from './src'
 import { html, customElement, LitElement } from 'lit-element';
-
 class myStore {
     data = {
         lvl: 1,
@@ -14,12 +13,11 @@ class myStore {
         this.data.isHidden = !this.data.isHidden;
     }
 }
-const Store = createStore(myStore);
-const store = new Store(); 
+const store = new (createStore(myStore)); 
 const state = store.data;
 
 @customElement("demo-comp")
-class DemoComponent extends createLitStore(LitElement) {
+class DemoComponent extends observeLitElement(LitElement) {
     render() {
         return html`
             <div>

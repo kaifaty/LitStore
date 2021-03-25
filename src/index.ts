@@ -1,5 +1,5 @@
 import { createStore } from './store';
-import { createLitStore } from './lit-store';
+import { observeLitElement } from './lit-store';
 
 
-export {createStore, createLitStore}
+export {createStore, observeLitElement}

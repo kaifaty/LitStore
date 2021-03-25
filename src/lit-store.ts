@@ -11,8 +11,8 @@ interface CustomElement {
     readonly isConnected: boolean;
   }
   
-export const createLitStore = <T extends Constructor<CustomElement>>(LitElement: T) => {
-    return class  extends LitElement {
+export const observeLitElement = <T extends Constructor<CustomElement>>(LitElement: T) => {
+    return class extends LitElement {
         _usedStores: Set<IStore> = new Set();
         disconnectedCallback(): void {
             super.disconnectedCallback();
