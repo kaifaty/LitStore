@@ -15,7 +15,7 @@ export type Constructor = new (...args: any[]) => {
 };
 
 export class StateRecorder {
-    static _log: Map<IStore, Set<string>>
+    static _log: Map<IStore, Set<string>> | null = null
     static start() {
         this._log = new Map();
     }

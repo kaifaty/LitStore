@@ -13,7 +13,7 @@ export declare type Constructor = new (...args: any[]) => {
     data: TData;
 };
 export declare class StateRecorder {
-    static _log: Map<IStore, Set<string>>;
+    static _log: Map<IStore, Set<string>> | null;
     static start(): void;
     static recordRead(stateObj: IStore, key: string): void;
     static finish(): Map<IStore, Set<string>>;

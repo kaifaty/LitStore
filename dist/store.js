@@ -15,6 +15,7 @@ export class StateRecorder {
         return stateVars;
     }
 }
+StateRecorder._log = null;
 export function createStore(base) {
     return class Store extends base {
         constructor(...args) {
