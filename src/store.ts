@@ -9,30 +9,29 @@ export interface IStore {
 }
 
 type TData = Record<string, unknown>;
+export type TRecorder = Map<IStore, Set<string>>
 export type Constructor = new (...args: any[]) => {
     data: TData
 };
 
-class StateRecorder {
-    _log: Map<IStore, Set<string>>
-    start() {
+export class StateRecorder {
+    static _log: Map<IStore, Set<string>>
+    static start() {
         this._log = new Map();
     }
-    recordRead(stateObj: IStore, key: string) {
+    static recordRead(stateObj: IStore, key: string) {
         if (this._log === null) return;
         const keys = this._log.get(stateObj) || new Set()
         keys.add(key);
         this._log.set(stateObj, keys);
     }
-    finish() {
+    static finish() {
         const stateVars = this._log;
         this._log = null;
         return stateVars;
     }
 
 }
-export type TRecorder = Map<IStore, Set<string>>
-export const stateRecorder = new StateRecorder();
 
 export function createStore<T extends Constructor>(base: T){
     return class Store extends base implements IStore{
@@ -69,7 +68,7 @@ export function createStore<T extends Constructor>(base: T){
                 key,
                 {
                     get() {
-                        self._recordRead(key)
+                        StateRecorder.recordRead(self, key);
                         return value;
                     },
                     set(v: unknown) {
@@ -85,7 +84,6 @@ export function createStore<T extends Constructor>(base: T){
 
         }
         _recordRead(key: string) {
-            stateRecorder.recordRead(this, key);
         }
         _notifyChange(key: string) {
             for (const [component, keys] of this._observers) {

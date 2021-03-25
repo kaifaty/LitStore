@@ -1,4 +1,4 @@
-import { stateRecorder, IStore, TRecorder} from './store';
+import { StateRecorder, IStore, TRecorder} from './store';
 
 export type PropertyValues<T = any> =
     keyof T extends PropertyKey ? Map<keyof T, unknown>: never;
@@ -19,7 +19,7 @@ export const createLitStore = <T extends Constructor<CustomElement>>(LitElement:
             this._clearObservers();
         }
         update(changedProperties: PropertyValues): void  {
-            stateRecorder.start();
+            StateRecorder.start();
             //@ts-ignore
             super.update(changedProperties);
             this._initStateObservers();
@@ -27,17 +27,19 @@ export const createLitStore = <T extends Constructor<CustomElement>>(LitElement:
         _initStateObservers(): void  {
             this._clearObservers();
             if (!this.isConnected) return;
-            this._addObservers(stateRecorder.finish());
+            this._addObservers(StateRecorder.finish());
         }
         _addObservers(usedStores: TRecorder): void  {
             for (let [store, keys] of usedStores) {
                 store.addComponent(this, keys);
+                this._usedStores.add(store);
             }
         }
         _clearObservers(): void {
-            for(const vals of this._usedStores){
-                vals.removeComponent(this);
+            for(const store of this._usedStores){
+                store.removeComponent(this);
             }
+            this._usedStores.clear();
         }
     } 
 }

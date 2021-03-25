@@ -609,7 +609,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createStore = createStore;
-exports.stateRecorder = void 0;
+exports.StateRecorder = void 0;
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -652,7 +652,7 @@ var StateRecorder = /*#__PURE__*/function () {
     _classCallCheck(this, StateRecorder);
   }
 
-  _createClass(StateRecorder, [{
+  _createClass(StateRecorder, null, [{
     key: "start",
     value: function start() {
       this._log = new Map();
@@ -678,8 +678,7 @@ var StateRecorder = /*#__PURE__*/function () {
   return StateRecorder;
 }();
 
-var stateRecorder = new StateRecorder();
-exports.stateRecorder = stateRecorder;
+exports.StateRecorder = StateRecorder;
 
 function createStore(base) {
   return /*#__PURE__*/function (_base) {
@@ -740,8 +739,7 @@ function createStore(base) {
         var value = null;
         Object.defineProperty(this.data, key, {
           get: function get() {
-            self._recordRead(key);
-
+            StateRecorder.recordRead(self, key);
             return value;
           },
           set: function set(v) {
@@ -757,9 +755,7 @@ function createStore(base) {
       }
     }, {
       key: "_recordRead",
-      value: function _recordRead(key) {
-        stateRecorder.recordRead(this, key);
-      }
+      value: function _recordRead(key) {}
     }, {
       key: "_notifyChange",
       value: function _notifyChange(key) {
@@ -865,7 +861,7 @@ var createLitStore = function createLitStore(LitElement) {
     }, {
       key: "update",
       value: function update(changedProperties) {
-        _store.stateRecorder.start(); //@ts-ignore
+        _store.StateRecorder.start(); //@ts-ignore
 
 
         _get(_getPrototypeOf(_class.prototype), "update", this).call(this, changedProperties);
@@ -879,7 +875,7 @@ var createLitStore = function createLitStore(LitElement) {
 
         if (!this.isConnected) return;
 
-        this._addObservers(_store.stateRecorder.finish());
+        this._addObservers(_store.StateRecorder.finish());
       }
     }, {
       key: "_addObservers",
@@ -894,6 +890,8 @@ var createLitStore = function createLitStore(LitElement) {
                 keys = _step$value[1];
 
             store.addComponent(this, keys);
+
+            this._usedStores.add(store);
           }
         } catch (err) {
           _iterator.e(err);
@@ -909,14 +907,16 @@ var createLitStore = function createLitStore(LitElement) {
 
         try {
           for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var vals = _step2.value;
-            vals.removeComponent(this);
+            var store = _step2.value;
+            store.removeComponent(this);
           }
         } catch (err) {
           _iterator2.e(err);
         } finally {
           _iterator2.f();
         }
+
+        this._usedStores.clear();
       }
     }]);
 
@@ -5105,7 +5105,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63289" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51305" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
