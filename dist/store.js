@@ -1,21 +1,20 @@
-class StateRecorder {
-    start() {
+export class StateRecorder {
+    static start() {
         this._log = new Map();
     }
-    recordRead(stateObj, key) {
+    static recordRead(stateObj, key) {
         if (this._log === null)
             return;
         const keys = this._log.get(stateObj) || new Set();
         keys.add(key);
         this._log.set(stateObj, keys);
     }
-    finish() {
+    static finish() {
         const stateVars = this._log;
         this._log = null;
         return stateVars;
     }
 }
-export const stateRecorder = new StateRecorder();
 export function createStore(base) {
     return class Store extends base {
         constructor(...args) {
@@ -48,7 +47,7 @@ export function createStore(base) {
             let value = null;
             Object.defineProperty(this.data, key, {
                 get() {
-                    self._recordRead(key);
+                    StateRecorder.recordRead(self, key);
                     return value;
                 },
                 set(v) {
@@ -62,7 +61,6 @@ export function createStore(base) {
             });
         }
         _recordRead(key) {
-            stateRecorder.recordRead(this, key);
         }
         _notifyChange(key) {
             for (const [component, keys] of this._observers) {

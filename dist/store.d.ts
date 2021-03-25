@@ -8,17 +8,16 @@ export interface IStore {
     removeComponent(observer: ILitElement): void;
 }
 declare type TData = Record<string, unknown>;
+export declare type TRecorder = Map<IStore, Set<string>>;
 export declare type Constructor = new (...args: any[]) => {
     data: TData;
 };
-declare class StateRecorder {
-    _log: Map<IStore, Set<string>>;
-    start(): void;
-    recordRead(stateObj: IStore, key: string): void;
-    finish(): Map<IStore, Set<string>>;
+export declare class StateRecorder {
+    static _log: Map<IStore, Set<string>>;
+    static start(): void;
+    static recordRead(stateObj: IStore, key: string): void;
+    static finish(): Map<IStore, Set<string>>;
 }
-export declare type TRecorder = Map<IStore, Set<string>>;
-export declare const stateRecorder: StateRecorder;
 export declare function createStore<T extends Constructor>(base: T): {
     new (...args: any[]): {
         _observers: TObserversList;

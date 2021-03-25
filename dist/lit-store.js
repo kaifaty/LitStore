@@ -1,4 +1,4 @@
-import { stateRecorder } from './store';
+import { StateRecorder } from './store';
 export const createLitStore = (LitElement) => {
     return class extends LitElement {
         constructor() {
@@ -10,7 +10,7 @@ export const createLitStore = (LitElement) => {
             this._clearObservers();
         }
         update(changedProperties) {
-            stateRecorder.start();
+            StateRecorder.start();
             //@ts-ignore
             super.update(changedProperties);
             this._initStateObservers();
@@ -19,17 +19,19 @@ export const createLitStore = (LitElement) => {
             this._clearObservers();
             if (!this.isConnected)
                 return;
-            this._addObservers(stateRecorder.finish());
+            this._addObservers(StateRecorder.finish());
         }
         _addObservers(usedStores) {
             for (let [store, keys] of usedStores) {
                 store.addComponent(this, keys);
+                this._usedStores.add(store);
             }
         }
         _clearObservers() {
-            for (const vals of this._usedStores) {
-                vals.removeComponent(this);
+            for (const store of this._usedStores) {
+                store.removeComponent(this);
             }
+            this._usedStores.clear();
         }
     };
 };
