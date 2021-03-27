@@ -1,16 +1,27 @@
 {
   "name": "lit-store",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Extry tiny state manager for LitElement",
   "main": "dist/index.js",
-  "files": [
-    "dist/index.js",
-    "index.d.ts"
-  ],
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "typesVersions": {
+    "<3.8": {
+      "*": [
+        "ts3.4/*"
+      ]
+    }
+  },
   "scripts": {
-    "dev": "parcel index.html",
+    "dev": "parcel demo/index.html -d ./demo/dist",
     "build": "tsc"
   },
+  
+  "files": [
+    "/demo/",
+    "/src/",
+    "/dist/"
+  ],
   "keywords": [
     "state",
     "store",

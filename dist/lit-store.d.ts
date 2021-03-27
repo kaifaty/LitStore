@@ -7,7 +7,7 @@ interface CustomElement {
     requestUpdate(): Promise<unknown>;
     readonly isConnected: boolean;
 }
-export declare const createLitStore: <T extends Constructor<CustomElement>>(LitElement: T) => {
+export declare const observeLitElement: <T extends Constructor<CustomElement>>(LitElement: T) => {
     new (...args: any[]): {
         _usedStores: Set<IStore>;
         disconnectedCallback(): void;

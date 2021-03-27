@@ -1,4 +1,4 @@
-import { createStore, observeLitElement } from './src'
+import { createStore, observeLitElement } from '../src'
 import { html, customElement, LitElement } from 'lit-element';
 class myStore {
     data = {

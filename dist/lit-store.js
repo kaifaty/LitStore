@@ -1,5 +1,5 @@
 import { StateRecorder } from './store';
-export const createLitStore = (LitElement) => {
+export const observeLitElement = (LitElement) => {
     return class extends LitElement {
         constructor() {
             super(...arguments);
