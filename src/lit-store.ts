@@ -31,13 +31,13 @@ export const observeLitElement = <T extends Constructor<CustomElement>>(LitEleme
         }
         _addObservers(usedStores: TRecorder): void  {
             for (let [store, keys] of usedStores) {
-                store.addComponent(this, keys);
+                store.__addComponent(this, keys);
                 this._usedStores.add(store);
             }
         }
         _clearObservers(): void {
             for(const store of this._usedStores){
-                store.removeComponent(this);
+                store.__removeComponent(this);
             }
             this._usedStores.clear();
         }

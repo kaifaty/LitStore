@@ -4,8 +4,10 @@ export interface ILitElement {
 export type TObserver = () => Promise<unknown>
 export type TObserversList = Map<ILitElement, Set<string>>;
 export interface IStore {
-    addComponent(observer: ILitElement, keys: Set<string>): void
-    removeComponent(observer: ILitElement): void
+    __addComponent(observer: ILitElement, keys: Set<string>): void
+    __removeComponent(observer: ILitElement): void
+    on(prop: string, f: (value?: unknown) => void)
+    off(prop: string, f: (value?: unknown) => void)
 }
 
 type TData = Record<string, unknown>;
@@ -30,67 +32,85 @@ export class StateRecorder {
         this._log = null;
         return stateVars;
     }
-
 }
+
 
 export function createStore<T extends Constructor>(base: T){
     return class Store extends base implements IStore{
-        _observers: TObserversList = new Map();
+        __observers: TObserversList = new Map();
+        __subscribs: Map<string, ((value: unknown) => void)[]> = new Map();
+        __values: Map<string, unknown> = new Map();
         constructor(...args: any[]) {
-            super();
-            this._initStateVars();
+            super(...args);
+            this.__initStateVars();
         }
-        addComponent(component: ILitElement, keys: Set<string>) {
-            this._observers.set(component, keys);
+        on(prop: string, func: (value?: unknown) => void){
+            if(!this.__subscribs.has(prop)) {
+                this.__subscribs.set(prop, []);
+            }
+            const sub = this.__subscribs.get(prop);
+            sub.push(func);
         }
-        removeComponent(component: ILitElement) {
-            this._observers.delete(component);
+        off(prop: string, func: (value?: unknown) => void){
+            const sub = this.__subscribs.get(prop);
+            if(sub){
+                this.__subscribs.set(prop, sub.filter(f => f !== func));
+            }
         }
-        _initStateVars() {        
+
+        __addComponent(component: ILitElement, keys: Set<string>) {
+            this.__observers.set(component, keys);
+        }
+        __removeComponent(component: ILitElement) {
+            this.__observers.delete(component);
+        }
+        __initStateVars() {        
             if (this.data) {
-                const data = this.data
+                const data = this.data;
                 this.data = {};
-                for (let [key, value] of Object.entries(data)) {
-                    this._initStateVar(key);
+                for (const [key, value] of Object.entries(data)) {
+                    this.__initStateVar(key);
                     this.data[key] = value;
                 }
             }
         }
-        _initStateVar(key: string) {
+        __initStateVar(key: keyof TData) {
             if (this.hasOwnProperty(key)) {
                 // Property already defined, so don't re-define.
                 return;
             }
             const self = this;
-            let value: unknown = null;
+            const values = this.__values; //.set(key, null);
             Object.defineProperty(
                 this.data,
                 key,
                 {
                     get() {
                         StateRecorder.recordRead(self, key);
-                        return value;
+                        return values.get(key);
                     },
                     set(v: unknown) {
-                        if (value !== v) {
-                            value = v;
-                            self._notifyChange(key);
+                        if (values.get(key) !== v) {
+                            values.set(key, v);
+                            self.__notifyChange(key);
                         }
                     },
                     configurable: true,
                     enumerable: true
                 }
             );
-
         }
-        _recordRead(key: string) {
-        }
-        _notifyChange(key: string) {
-            for (const [component, keys] of this._observers) {
+        __notifyChange(key: keyof TData){
+            for (const [component, keys] of this.__observers) {
                 if (keys.has(key)) {
                     component.requestUpdate();
                 }
             };
+            if(this.__subscribs.has(key)){
+                for(const f of this.__subscribs.get(key)){
+                    f(this.__values.get(key));
+                }
+            }
         }
         }
 }

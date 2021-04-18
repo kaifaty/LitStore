@@ -692,27 +692,55 @@ function createStore(base) {
 
       _classCallCheck(this, Store);
 
-      _this = _super.call(this);
-      _this._observers = new Map();
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
 
-      _this._initStateVars();
+      _this = _super.call.apply(_super, [this].concat(args));
+      _this.__observers = new Map();
+      _this.__subscribs = new Map();
+      _this.__values = new Map();
+
+      _this.__initStateVars();
 
       return _this;
     }
 
     _createClass(Store, [{
-      key: "addComponent",
-      value: function addComponent(component, keys) {
-        this._observers.set(component, keys);
+      key: "on",
+      value: function on(prop, func) {
+        if (!this.__subscribs.has(prop)) {
+          this.__subscribs.set(prop, []);
+        }
+
+        var sub = this.__subscribs.get(prop);
+
+        sub.push(func);
       }
     }, {
-      key: "removeComponent",
-      value: function removeComponent(component) {
-        this._observers.delete(component);
+      key: "off",
+      value: function off(prop, func) {
+        var sub = this.__subscribs.get(prop);
+
+        if (sub) {
+          this.__subscribs.set(prop, sub.filter(function (f) {
+            return f !== func;
+          }));
+        }
       }
     }, {
-      key: "_initStateVars",
-      value: function _initStateVars() {
+      key: "__addComponent",
+      value: function __addComponent(component, keys) {
+        this.__observers.set(component, keys);
+      }
+    }, {
+      key: "__removeComponent",
+      value: function __removeComponent(component) {
+        this.__observers.delete(component);
+      }
+    }, {
+      key: "__initStateVars",
+      value: function __initStateVars() {
         if (this.data) {
           var data = this.data;
           this.data = {};
@@ -722,32 +750,33 @@ function createStore(base) {
                 key = _Object$entries$_i[0],
                 value = _Object$entries$_i[1];
 
-            this._initStateVar(key);
+            this.__initStateVar(key);
 
             this.data[key] = value;
           }
         }
       }
     }, {
-      key: "_initStateVar",
-      value: function _initStateVar(key) {
+      key: "__initStateVar",
+      value: function __initStateVar(key) {
         if (this.hasOwnProperty(key)) {
           // Property already defined, so don't re-define.
           return;
         }
 
         var self = this;
-        var value = null;
+        var values = this.__values; //.set(key, null);
+
         Object.defineProperty(this.data, key, {
           get: function get() {
             StateRecorder.recordRead(self, key);
-            return value;
+            return values.get(key);
           },
           set: function set(v) {
-            if (value !== v) {
-              value = v;
+            if (values.get(key) !== v) {
+              values.set(key, v);
 
-              self._notifyChange(key);
+              self.__notifyChange(key);
             }
           },
           configurable: true,
@@ -755,12 +784,9 @@ function createStore(base) {
         });
       }
     }, {
-      key: "_recordRead",
-      value: function _recordRead(key) {}
-    }, {
-      key: "_notifyChange",
-      value: function _notifyChange(key) {
-        var _iterator = _createForOfIteratorHelper(this._observers),
+      key: "__notifyChange",
+      value: function __notifyChange(key) {
+        var _iterator = _createForOfIteratorHelper(this.__observers),
             _step;
 
         try {
@@ -780,13 +806,102 @@ function createStore(base) {
         }
 
         ;
+
+        if (this.__subscribs.has(key)) {
+          var _iterator2 = _createForOfIteratorHelper(this.__subscribs.get(key)),
+              _step2;
+
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var f = _step2.value;
+              f(this.__values.get(key));
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+        }
       }
     }]);
 
     return Store;
   }(base);
 }
-},{}],"../src/lit-store.ts":[function(require,module,exports) {
+},{}],"stores.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.lvlMonitorState = exports.lvlMonitorStore = exports.rootState = exports.rootStore = void 0;
+
+var _store = require("../src/store");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var RootStore = (0, _store.createStore)( /*#__PURE__*/function () {
+  function _class() {
+    _classCallCheck(this, _class);
+
+    this.data = {
+      lvl: 1,
+      isHidden: false,
+      userName: "Captain America"
+    };
+  }
+
+  _createClass(_class, [{
+    key: "increment",
+    value: function increment() {
+      this.data.lvl++;
+    }
+  }, {
+    key: "toggle",
+    value: function toggle() {
+      this.data.isHidden = !this.data.isHidden;
+    }
+  }]);
+
+  return _class;
+}());
+var LVLMonitor = (0, _store.createStore)( /*#__PURE__*/function () {
+  function _class2(root) {
+    var _this = this;
+
+    _classCallCheck(this, _class2);
+
+    this.data = {
+      lvlStatus: ""
+    };
+    this.updateLvlStatus(root.data.lvl);
+    root.on("lvl", function (lvl) {
+      _this.updateLvlStatus(lvl);
+    });
+  }
+
+  _createClass(_class2, [{
+    key: "updateLvlStatus",
+    value: function updateLvlStatus(lvl) {
+      this.data.lvlStatus = "\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0440\u0430\u0432\u0435\u043D: ".concat(lvl);
+    }
+  }]);
+
+  return _class2;
+}());
+var rootStore = new RootStore();
+exports.rootStore = rootStore;
+var rootState = rootStore.data;
+exports.rootState = rootState;
+var lvlMonitorStore = new LVLMonitor(rootStore);
+exports.lvlMonitorStore = lvlMonitorStore;
+var lvlMonitorState = lvlMonitorStore.data;
+exports.lvlMonitorState = lvlMonitorState;
+},{"../src/store":"../src/store.ts"}],"../src/lit-store.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -890,7 +1005,7 @@ var observeLitElement = function observeLitElement(LitElement) {
                 store = _step$value[0],
                 keys = _step$value[1];
 
-            store.addComponent(this, keys);
+            store.__addComponent(this, keys);
 
             this._usedStores.add(store);
           }
@@ -909,7 +1024,8 @@ var observeLitElement = function observeLitElement(LitElement) {
         try {
           for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
             var store = _step2.value;
-            store.removeComponent(this);
+
+            store.__removeComponent(this);
           }
         } catch (err) {
           _iterator2.e(err);
@@ -4969,6 +5085,8 @@ LitElement.render = _shadyRender.render;
 
 var _tslib = require("tslib");
 
+var _stores = require("./stores");
+
 var _src = require("../src");
 
 var _litElement = require("lit-element");
@@ -4978,6 +5096,12 @@ var _templateObject, _templateObject2, _templateObject3;
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -4993,41 +5117,6 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var myStore = /*#__PURE__*/function () {
-  function myStore() {
-    _classCallCheck(this, myStore);
-
-    this.data = {
-      lvl: 1,
-      isHidden: false,
-      userName: "Captain America"
-    };
-  }
-
-  _createClass(myStore, [{
-    key: "increment",
-    value: function increment() {
-      this.data.lvl++;
-    }
-  }, {
-    key: "toggle",
-    value: function toggle() {
-      this.data.isHidden = !this.data.isHidden;
-    }
-  }]);
-
-  return myStore;
-}();
-
-var store = new ((0, _src.createStore)(myStore))();
-var state = store.data;
-
 var DemoComponent = /*#__PURE__*/function (_observeLitElement) {
   _inherits(DemoComponent, _observeLitElement);
 
@@ -5042,11 +5131,11 @@ var DemoComponent = /*#__PURE__*/function (_observeLitElement) {
   _createClass(DemoComponent, [{
     key: "render",
     value: function render() {
-      return (0, _litElement.html)(_templateObject || (_templateObject = _taggedTemplateLiteral(["\n            <div>\n                ", "\n            </div>           \n            <button @click=", ">LVL UP</button>\n            <button @click=", ">toggle</button>\n        "])), state.isHidden ? "" : (0, _litElement.html)(_templateObject2 || (_templateObject2 = _taggedTemplateLiteral(["<div>Current level: ", "</div>"])), state.lvl), function () {
-        return store.increment();
-      }, function () {
-        return store.toggle();
-      });
+      return (0, _litElement.html)(_templateObject || (_templateObject = _taggedTemplateLiteral(["\n            <div>\n                <button @click=", ">toggle</button>\n                ", "\n            </div>           \n        "])), function () {
+        return _stores.rootStore.toggle();
+      }, _stores.rootState.isHidden ? "" : (0, _litElement.html)(_templateObject2 || (_templateObject2 = _taggedTemplateLiteral(["<button @click=", ">LVL UP</button>"])), function () {
+        return _stores.rootStore.increment();
+      }));
     }
   }]);
 
@@ -5055,8 +5144,8 @@ var DemoComponent = /*#__PURE__*/function (_observeLitElement) {
 
 DemoComponent = (0, _tslib.__decorate)([(0, _litElement.customElement)("demo-comp")], DemoComponent);
 
-var MyComponent = /*#__PURE__*/function (_createLitStore) {
-  _inherits(MyComponent, _createLitStore);
+var MyComponent = /*#__PURE__*/function (_observeLitElement2) {
+  _inherits(MyComponent, _observeLitElement2);
 
   var _super2 = _createSuper(MyComponent);
 
@@ -5069,15 +5158,15 @@ var MyComponent = /*#__PURE__*/function (_createLitStore) {
   _createClass(MyComponent, [{
     key: "render",
     value: function render() {
-      return (0, _litElement.html)(_templateObject3 || (_templateObject3 = _taggedTemplateLiteral(["\n            <div>\n                <h2>", "</h2>\n                <h3>LVL: ", "</h3>\n            </div>\n        "])), state.userName, state.lvl);
+      return (0, _litElement.html)(_templateObject3 || (_templateObject3 = _taggedTemplateLiteral(["\n            <div>\n                <h2>", "</h2>\n                <h3>", "</h3>\n            </div>\n        "])), _stores.rootState.userName, _stores.lvlMonitorState.lvlStatus);
     }
   }]);
 
   return MyComponent;
-}(createLitStore(_litElement.LitElement));
+}((0, _src.observeLitElement)(_litElement.LitElement));
 
 MyComponent = (0, _tslib.__decorate)([(0, _litElement.customElement)("user-component")], MyComponent);
-},{"tslib":"../node_modules/tslib/tslib.es6.js","../src":"../src/index.ts","lit-element":"../node_modules/lit-element/lit-element.js"}],"C:/Users/Kaifat/AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"tslib":"../node_modules/tslib/tslib.es6.js","./stores":"stores.ts","../src":"../src/index.ts","lit-element":"../node_modules/lit-element/lit-element.js"}],"C:/Users/Kaifat/AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -5105,7 +5194,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54887" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60797" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

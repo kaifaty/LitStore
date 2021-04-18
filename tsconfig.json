@@ -1,5 +1,8 @@
 {
-  "include": ["src/*"],
+  "include": [
+    "src/*",
+    "demo/*",
+  ],
   "compilerOptions": {   
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 
