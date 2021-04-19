@@ -16,60 +16,74 @@ export class StateRecorder {
     }
 }
 StateRecorder._log = null;
-export function createStore(base) {
-    return class Store extends base {
-        constructor(...args) {
-            super();
-            this._observers = new Map();
-            this._initStateVars();
+export class BaseStore {
+    constructor() {
+        this.__observers = new Map();
+        this.__subscribs = new Map();
+        this.__values = new Map();
+    }
+    on(prop, func) {
+        if (!this.__subscribs.has(prop)) {
+            this.__subscribs.set(prop, []);
         }
-        addComponent(component, keys) {
-            this._observers.set(component, keys);
+        const sub = this.__subscribs.get(prop);
+        sub.push(func);
+    }
+    off(prop, func) {
+        const sub = this.__subscribs.get(prop);
+        if (sub) {
+            this.__subscribs.set(prop, sub.filter(f => f !== func));
         }
-        removeComponent(component) {
-            this._observers.delete(component);
+    }
+    __addComponent(component, keys) {
+        this.__observers.set(component, keys);
+    }
+    __removeComponent(component) {
+        this.__observers.delete(component);
+    }
+    initState() {
+        if (this.data) {
+            const data = this.data;
+            this.data = {};
+            for (const [key, value] of Object.entries(data)) {
+                this.__initStateVar(key);
+                this.data[key] = value;
+            }
         }
-        _initStateVars() {
-            if (this.data) {
-                const data = this.data;
-                this.data = {};
-                for (let [key, value] of Object.entries(data)) {
-                    this._initStateVar(key);
-                    this.data[key] = value;
+    }
+    __initStateVar(key) {
+        if (this.hasOwnProperty(key)) {
+            // Property already defined, so don't re-define.
+            return;
+        }
+        const self = this;
+        const values = this.__values; //.set(key, null);
+        Object.defineProperty(this.data, key, {
+            get() {
+                StateRecorder.recordRead(self, key);
+                return values.get(key);
+            },
+            set(v) {
+                if (values.get(key) !== v) {
+                    values.set(key, v);
+                    self.__notifyChange(key);
                 }
+            },
+            configurable: true,
+            enumerable: true
+        });
+    }
+    __notifyChange(key) {
+        for (const [component, keys] of this.__observers) {
+            if (keys.has(key)) {
+                component.requestUpdate();
             }
         }
-        _initStateVar(key) {
-            if (this.hasOwnProperty(key)) {
-                // Property already defined, so don't re-define.
-                return;
+        ;
+        if (this.__subscribs.has(key)) {
+            for (const f of this.__subscribs.get(key)) {
+                f(this.__values.get(key));
             }
-            const self = this;
-            let value = null;
-            Object.defineProperty(this.data, key, {
-                get() {
-                    StateRecorder.recordRead(self, key);
-                    return value;
-                },
-                set(v) {
-                    if (value !== v) {
-                        value = v;
-                        self._notifyChange(key);
-                    }
-                },
-                configurable: true,
-                enumerable: true
-            });
         }
-        _recordRead(key) {
-        }
-        _notifyChange(key) {
-            for (const [component, keys] of this._observers) {
-                if (keys.has(key)) {
-                    component.requestUpdate();
-                }
-            }
-            ;
-        }
-    };
+    }
 }

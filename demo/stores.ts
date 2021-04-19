@@ -1,11 +1,15 @@
-import { createStore, IStore } from '../src/store';
+import { BaseStore, IStore } from '../src/store';
 
 
-const RootStore = createStore(class {
+class RootStore extends BaseStore{
     data = {
         lvl: 1,
         isHidden: false,
         userName: "Captain America"
+    }
+    constructor(){
+        super();
+        this.initState();
     }
     increment(){
         this.data.lvl++;
@@ -13,22 +17,24 @@ const RootStore = createStore(class {
     toggle(){
         this.data.isHidden = !this.data.isHidden;
     }
-})
+};
 
-const LVLMonitor = createStore(class {
-    constructor(root: typeof rootStore){
-        this.updateLvlStatus(root.data.lvl)
-        root.on("lvl", (lvl: number) => {
-            this.updateLvlStatus(lvl);
-        })
-    }
+class LVLMonitor extends BaseStore {
     data = {
         lvlStatus: ""
+    }
+    constructor(root: typeof rootStore){
+        super();
+        this.initState();
+        this.updateLvlStatus(root.data.lvl)
+        root.on("lvl", lvl => {
+            this.updateLvlStatus(lvl as number);
+        })
     }
     updateLvlStatus(lvl: number){
         this.data.lvlStatus = `Текущий уровень равен: ${lvl}`;
     }
-});
+};
 
 
 export const rootStore = new RootStore; 

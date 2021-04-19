@@ -23,13 +23,13 @@ export const observeLitElement = (LitElement) => {
         }
         _addObservers(usedStores) {
             for (let [store, keys] of usedStores) {
-                store.addComponent(this, keys);
+                store.__addComponent(this, keys);
                 this._usedStores.add(store);
             }
         }
         _clearObservers() {
             for (const store of this._usedStores) {
-                store.removeComponent(this);
+                store.__removeComponent(this);
             }
             this._usedStores.clear();
         }

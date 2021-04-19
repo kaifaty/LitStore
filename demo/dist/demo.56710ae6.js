@@ -608,10 +608,7 @@ function __classPrivateFieldSet(receiver, privateMap, value) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createStore = createStore;
-exports.StateRecorder = void 0;
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+exports.BaseStore = exports.StateRecorder = void 0;
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
@@ -626,20 +623,6 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -681,153 +664,138 @@ var StateRecorder = /*#__PURE__*/function () {
 exports.StateRecorder = StateRecorder;
 StateRecorder._log = null;
 
-function createStore(base) {
-  return /*#__PURE__*/function (_base) {
-    _inherits(Store, _base);
+var BaseStore = /*#__PURE__*/function () {
+  function BaseStore() {
+    _classCallCheck(this, BaseStore);
 
-    var _super = _createSuper(Store);
+    this.__observers = new Map();
+    this.__subscribs = new Map();
+    this.__values = new Map();
+  }
 
-    function Store() {
-      var _this;
-
-      _classCallCheck(this, Store);
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+  _createClass(BaseStore, [{
+    key: "on",
+    value: function on(prop, func) {
+      if (!this.__subscribs.has(prop)) {
+        this.__subscribs.set(prop, []);
       }
 
-      _this = _super.call.apply(_super, [this].concat(args));
-      _this.__observers = new Map();
-      _this.__subscribs = new Map();
-      _this.__values = new Map();
+      var sub = this.__subscribs.get(prop);
 
-      _this.__initStateVars();
-
-      return _this;
+      sub.push(func);
     }
+  }, {
+    key: "off",
+    value: function off(prop, func) {
+      var sub = this.__subscribs.get(prop);
 
-    _createClass(Store, [{
-      key: "on",
-      value: function on(prop, func) {
-        if (!this.__subscribs.has(prop)) {
-          this.__subscribs.set(prop, []);
+      if (sub) {
+        this.__subscribs.set(prop, sub.filter(function (f) {
+          return f !== func;
+        }));
+      }
+    }
+  }, {
+    key: "__addComponent",
+    value: function __addComponent(component, keys) {
+      this.__observers.set(component, keys);
+    }
+  }, {
+    key: "__removeComponent",
+    value: function __removeComponent(component) {
+      this.__observers.delete(component);
+    }
+  }, {
+    key: "initState",
+    value: function initState() {
+      if (this.data) {
+        var data = this.data;
+        this.data = {};
+
+        for (var _i = 0, _Object$entries = Object.entries(data); _i < _Object$entries.length; _i++) {
+          var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+              key = _Object$entries$_i[0],
+              value = _Object$entries$_i[1];
+
+          this.__initStateVar(key);
+
+          this.data[key] = value;
         }
-
-        var sub = this.__subscribs.get(prop);
-
-        sub.push(func);
       }
-    }, {
-      key: "off",
-      value: function off(prop, func) {
-        var sub = this.__subscribs.get(prop);
-
-        if (sub) {
-          this.__subscribs.set(prop, sub.filter(function (f) {
-            return f !== func;
-          }));
-        }
+    }
+  }, {
+    key: "__initStateVar",
+    value: function __initStateVar(key) {
+      if (this.hasOwnProperty(key)) {
+        // Property already defined, so don't re-define.
+        return;
       }
-    }, {
-      key: "__addComponent",
-      value: function __addComponent(component, keys) {
-        this.__observers.set(component, keys);
-      }
-    }, {
-      key: "__removeComponent",
-      value: function __removeComponent(component) {
-        this.__observers.delete(component);
-      }
-    }, {
-      key: "__initStateVars",
-      value: function __initStateVars() {
-        if (this.data) {
-          var data = this.data;
-          this.data = {};
 
-          for (var _i = 0, _Object$entries = Object.entries(data); _i < _Object$entries.length; _i++) {
-            var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
-                key = _Object$entries$_i[0],
-                value = _Object$entries$_i[1];
+      var self = this;
+      var values = this.__values; //.set(key, null);
 
-            this.__initStateVar(key);
+      Object.defineProperty(this.data, key, {
+        get: function get() {
+          StateRecorder.recordRead(self, key);
+          return values.get(key);
+        },
+        set: function set(v) {
+          if (values.get(key) !== v) {
+            values.set(key, v);
 
-            this.data[key] = value;
+            self.__notifyChange(key);
+          }
+        },
+        configurable: true,
+        enumerable: true
+      });
+    }
+  }, {
+    key: "__notifyChange",
+    value: function __notifyChange(key) {
+      var _iterator = _createForOfIteratorHelper(this.__observers),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _step$value = _slicedToArray(_step.value, 2),
+              component = _step$value[0],
+              keys = _step$value[1];
+
+          if (keys.has(key)) {
+            component.requestUpdate();
           }
         }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
       }
-    }, {
-      key: "__initStateVar",
-      value: function __initStateVar(key) {
-        if (this.hasOwnProperty(key)) {
-          // Property already defined, so don't re-define.
-          return;
-        }
 
-        var self = this;
-        var values = this.__values; //.set(key, null);
+      ;
 
-        Object.defineProperty(this.data, key, {
-          get: function get() {
-            StateRecorder.recordRead(self, key);
-            return values.get(key);
-          },
-          set: function set(v) {
-            if (values.get(key) !== v) {
-              values.set(key, v);
-
-              self.__notifyChange(key);
-            }
-          },
-          configurable: true,
-          enumerable: true
-        });
-      }
-    }, {
-      key: "__notifyChange",
-      value: function __notifyChange(key) {
-        var _iterator = _createForOfIteratorHelper(this.__observers),
-            _step;
+      if (this.__subscribs.has(key)) {
+        var _iterator2 = _createForOfIteratorHelper(this.__subscribs.get(key)),
+            _step2;
 
         try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var _step$value = _slicedToArray(_step.value, 2),
-                component = _step$value[0],
-                keys = _step$value[1];
-
-            if (keys.has(key)) {
-              component.requestUpdate();
-            }
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var f = _step2.value;
+            f(this.__values.get(key));
           }
         } catch (err) {
-          _iterator.e(err);
+          _iterator2.e(err);
         } finally {
-          _iterator.f();
-        }
-
-        ;
-
-        if (this.__subscribs.has(key)) {
-          var _iterator2 = _createForOfIteratorHelper(this.__subscribs.get(key)),
-              _step2;
-
-          try {
-            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var f = _step2.value;
-              f(this.__values.get(key));
-            }
-          } catch (err) {
-            _iterator2.e(err);
-          } finally {
-            _iterator2.f();
-          }
+          _iterator2.f();
         }
       }
-    }]);
+    }
+  }]);
 
-    return Store;
-  }(base);
-}
+  return BaseStore;
+}();
+
+exports.BaseStore = BaseStore;
 },{}],"stores.ts":[function(require,module,exports) {
 "use strict";
 
@@ -838,24 +806,51 @@ exports.lvlMonitorState = exports.lvlMonitorStore = exports.rootState = exports.
 
 var _store = require("../src/store");
 
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var RootStore = (0, _store.createStore)( /*#__PURE__*/function () {
-  function _class() {
-    _classCallCheck(this, _class);
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
-    this.data = {
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var RootStore = /*#__PURE__*/function (_BaseStore) {
+  _inherits(RootStore, _BaseStore);
+
+  var _super = _createSuper(RootStore);
+
+  function RootStore() {
+    var _this;
+
+    _classCallCheck(this, RootStore);
+
+    _this = _super.call(this);
+    _this.data = {
       lvl: 1,
       isHidden: false,
       userName: "Captain America"
     };
+
+    _this.initState();
+
+    return _this;
   }
 
-  _createClass(_class, [{
+  _createClass(RootStore, [{
     key: "increment",
     value: function increment() {
       this.data.lvl++;
@@ -867,32 +862,47 @@ var RootStore = (0, _store.createStore)( /*#__PURE__*/function () {
     }
   }]);
 
-  return _class;
-}());
-var LVLMonitor = (0, _store.createStore)( /*#__PURE__*/function () {
-  function _class2(root) {
-    var _this = this;
+  return RootStore;
+}(_store.BaseStore);
 
-    _classCallCheck(this, _class2);
+;
 
-    this.data = {
+var LVLMonitor = /*#__PURE__*/function (_BaseStore2) {
+  _inherits(LVLMonitor, _BaseStore2);
+
+  var _super2 = _createSuper(LVLMonitor);
+
+  function LVLMonitor(root) {
+    var _this2;
+
+    _classCallCheck(this, LVLMonitor);
+
+    _this2 = _super2.call(this);
+    _this2.data = {
       lvlStatus: ""
     };
-    this.updateLvlStatus(root.data.lvl);
+
+    _this2.initState();
+
+    _this2.updateLvlStatus(root.data.lvl);
+
     root.on("lvl", function (lvl) {
-      _this.updateLvlStatus(lvl);
+      _this2.updateLvlStatus(lvl);
     });
+    return _this2;
   }
 
-  _createClass(_class2, [{
+  _createClass(LVLMonitor, [{
     key: "updateLvlStatus",
     value: function updateLvlStatus(lvl) {
       this.data.lvlStatus = "\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0440\u0430\u0432\u0435\u043D: ".concat(lvl);
     }
   }]);
 
-  return _class2;
-}());
+  return LVLMonitor;
+}(_store.BaseStore);
+
+;
 var rootStore = new RootStore();
 exports.rootStore = rootStore;
 var rootState = rootStore.data;
@@ -5194,7 +5204,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60797" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58769" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

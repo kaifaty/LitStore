@@ -1,6 +1,6 @@
 {
   "name": "lit-store",
-  "version": "1.0.6",
+  "version": "1.1.1",
   "description": "Extry tiny state manager for LitElement",
   "main": "dist/index.js",
   "module": "dist/index.js",

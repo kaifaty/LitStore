@@ -1,3 +1,3 @@
-import { createStore } from './store';
+import { BaseStore } from './store';
 import { observeLitElement } from './lit-store';
-export { createStore, observeLitElement };
+export { BaseStore, observeLitElement };
