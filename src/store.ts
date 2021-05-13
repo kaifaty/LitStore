@@ -1,5 +1,5 @@
 export interface ILitElement {
-    requestUpdate(): Promise<unknown>
+    requestUpdate(): void
 }
 export type TObserver = () => Promise<unknown>
 export type TObserversList = Map<ILitElement, Set<string>>;

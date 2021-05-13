@@ -7,7 +7,8 @@ type Constructor<T> = new(...args: any[]) => T;
 interface CustomElement {
     connectedCallback?(): void;
     disconnectedCallback?(): void;
-    requestUpdate(): Promise<unknown>
+    requestUpdate(): void
+    //update(changedProperties: PropertyValues): void
     readonly isConnected: boolean;
   }
   

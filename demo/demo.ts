@@ -1,6 +1,7 @@
 import { rootState, rootStore, lvlMonitorState } from './stores';
 import { observeLitElement } from '../src'
-import { html, customElement, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators'
 
 
 @customElement("demo-comp")
