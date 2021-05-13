@@ -4,7 +4,7 @@ declare type Constructor<T> = new (...args: any[]) => T;
 interface CustomElement {
     connectedCallback?(): void;
     disconnectedCallback?(): void;
-    requestUpdate(): Promise<unknown>;
+    requestUpdate(): void;
     readonly isConnected: boolean;
 }
 export declare const observeLitElement: <T extends Constructor<CustomElement>>(LitElement: T) => {
@@ -16,7 +16,7 @@ export declare const observeLitElement: <T extends Constructor<CustomElement>>(L
         _addObservers(usedStores: TRecorder): void;
         _clearObservers(): void;
         connectedCallback?(): void;
-        requestUpdate(): Promise<unknown>;
+        requestUpdate(): void;
         readonly isConnected: boolean;
     };
 } & T;

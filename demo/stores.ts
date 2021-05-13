@@ -1,4 +1,4 @@
-import { BaseStore, IStore } from '../src/store';
+import { BaseStore } from '../src/store';
 
 
 class RootStore extends BaseStore{
@@ -32,7 +32,7 @@ class LVLMonitor extends BaseStore {
         })
     }
     updateLvlStatus(lvl: number){
-        this.data.lvlStatus = `Текущий уровень равен: ${lvl}`;
+        this.data.lvlStatus = `Current level: ${lvl}`;
     }
 };
 
